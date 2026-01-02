@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thoughts - Henry Liev</title>
+    <link rel="stylesheet" href="styling.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .blog-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .blog-list {
+            list-style: none;
+            padding: 0;
+        }
+        .blog-list-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #bbb;
+        }
+        .blog-list-item:last-child {
+            border-bottom: none;
+        }
+        .blog-post-link {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .blog-post-date {
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+        }
+        .blog-content {
+            margin-top: 20px;
+        }
+        .back-link {
+            margin-bottom: 20px;
+        }
+        .blog-content img {
+            max-width: 100%;
+            height: auto;
+        }
+        .blog-content pre {
+            background-color: #ddd;
+            border: 1px solid #bbb;
+            border-radius: 5px;
+            padding: 10px;
+            overflow-x: auto;
+        }
+        .blog-content code {
+            background-color: #ddd;
+            border: 1px solid #bbb;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .blog-content pre code {
+            background-color: transparent;
+            border: none;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-nav">
+        <div class="name"><em><b>Henry Liev</b></em></div>
+        <div>
+            <a href="index.html">Home</a> &nbsp;
+            <!-- <a href="pubs.html">Publications</a> &nbsp; -->
+            <a href="notes.html">Notes</a> &nbsp;
+            <a href="contact.html">Contact</a> &nbsp;
+        </div>
+    </div>
+    <div style="clear:both"></div>
+    
+    <div class="blog-container">
+        <h1>Thoughts</h1>
+        
+        <div id="blog-list-container">
+            <ul class="blog-list" id="blog-list"></ul>
+        </div>
+        
+        <div id="blog-post-container" style="display: none;">
+            <div class="back-link">
+                <a href="blog.html">← Back to blog list</a>
+            </div>
+            <div id="blog-post-content" class="blog-content"></div>
+        </div>
+    </div>
+
+    <script>
+        // Get blog post from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const postParam = urlParams.get('post');
+
+        // Load blog posts from JSON file
+        let blogPosts = [];
+        
+        async function loadBlogPosts() {
+            try {
+                const response = await fetch('blog/posts.json');
+                if (response.ok) {
+                    blogPosts = await response.json();
+                } else {
+                    console.warn('Could not load posts.json, using empty list');
+                    blogPosts = [];
+                }
+            } catch (error) {
+                console.error('Error loading posts:', error);
+                blogPosts = [];
+            }
+        }
+
+        // Function to fetch and render markdown
+        async function loadMarkdown(filename) {
+            try {
+                const response = await fetch(`blog/${filename}`);
+                if (!response.ok) {
+                    throw new Error('File not found');
+                }
+                const markdown = await response.text();
+                const html = marked.parse(markdown);
+                return html;
+            } catch (error) {
+                return `<p>Error loading post: ${error.message}</p>`;
+            }
+        }
+
+        // Function to display blog list
+        function displayBlogList() {
+            const listContainer = document.getElementById('blog-list');
+            const postContainer = document.getElementById('blog-post-container');
+            const listView = document.getElementById('blog-list-container');
+
+            if (blogPosts.length === 0) {
+                listContainer.innerHTML = '<li>No blog posts yet. Add markdown files to the blog/ directory and update the blogPosts array in blog.html</li>';
+                return;
+            }
+
+            listContainer.innerHTML = blogPosts.map(post => `
+                <li class="blog-list-item">
+                    <a href="?post=${encodeURIComponent(post.filename)}" class="blog-post-link">
+                        ${post.title}
+                    </a>
+                    <div class="blog-post-date">${post.date}</div>
+                </li>
+            `).join('');
+
+            listView.style.display = 'block';
+            postContainer.style.display = 'none';
+        }
+
+        // Function to display a single post
+        async function displayPost(filename) {
+            const listView = document.getElementById('blog-list-container');
+            const postContainer = document.getElementById('blog-post-container');
+            const postContent = document.getElementById('blog-post-content');
+
+            listView.style.display = 'none';
+            postContainer.style.display = 'block';
+
+            postContent.innerHTML = '<p>Loading...</p>';
+            const html = await loadMarkdown(filename);
+            postContent.innerHTML = html;
+        }
+
+        // Initialize
+        async function init() {
+            await loadBlogPosts();
+            if (postParam) {
+                displayPost(postParam);
+            } else {
+                displayBlogList();
+            }
+        }
+        
+        init();
+    </script>
+</body>
+</html>
+

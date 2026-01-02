@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baking - Henry Liev</title>
+    <link rel="stylesheet" href="styling.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .bake-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .bake-list {
+            list-style: none;
+            padding: 0;
+        }
+        .bake-list-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #bbb;
+        }
+        .bake-list-item:last-child {
+            border-bottom: none;
+        }
+        .bake-post-link {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .bake-post-date {
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+        }
+        .bake-content {
+            margin-top: 20px;
+        }
+        .bake-content img {
+            max-width: 100%;
+            height: auto;
+        }
+        /* Image formatting helpers for baking posts */
+        .bake-main {
+            display: block;
+            margin: 20px auto;
+            max-width: 80%;
+        }
+        .bake-step {
+            display: block;
+            margin: 10px auto;
+            max-width: 70%;
+        }
+        .bake-grid {
+            display: inline-block;
+            width: 32%;
+            margin: 0.5%;
+            vertical-align: top;
+        }
+        @media (max-width: 700px) {
+            .bake-grid {
+                width: 48%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-nav">
+        <div class="name"><em><b>Henry Liev</b></em></div>
+        <div>
+            <a href="index.html">Home</a> &nbsp;
+            <!-- Hidden from main nav on purpose: baking section is private/experimental -->
+            <!-- <a href="baking.html">Baking</a> &nbsp; -->
+        </div>
+    </div>
+    <div style="clear:both"></div>
+    
+    <div class="bake-container">
+        <h1>Baking</h1>
+        
+        <div id="bake-list-container">
+            <ul class="bake-list" id="bake-list"></ul>
+        </div>
+        
+        <div id="bake-post-container" style="display: none;">
+            <div class="back-link">
+                <a href="baking.html">← Back to baking</a>
+            </div>
+            <div id="bake-post-content" class="bake-content"></div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const postParam = urlParams.get('post');
+
+        let bakePosts = [];
+        
+        async function loadBakePosts() {
+            try {
+                const response = await fetch('baking/posts.json');
+                if (response.ok) {
+                    bakePosts = await response.json();
+                } else {
+                    console.warn('Could not load baking/posts.json, using empty list');
+                    bakePosts = [];
+                }
+            } catch (error) {
+                console.error('Error loading baking posts:', error);
+                bakePosts = [];
+            }
+        }
+
+        async function loadMarkdown(filename) {
+            try {
+                const response = await fetch(`baking/${filename}`);
+                if (!response.ok) {
+                    throw new Error('File not found');
+                }
+                const markdown = await response.text();
+                let html = marked.parse(markdown);
+                // Allow simple class syntax like ![alt](src){.bake-main}
+                html = html.replace(/(<img[^>]*?)\s*\{\.([a-zA-Z0-9_-]+)\s*\}/g, '$1 class="$2"');
+                // Rewrite image paths to be relative to HTML file (pictures/ -> baking/pictures/)
+                html = html.replace(/src="pictures\//g, 'src="baking/pictures/');
+                return html;
+            } catch (error) {
+                return `<p>Error loading post: ${error.message}</p>`;
+            }
+        }
+
+        function displayBakeList() {
+            const listContainer = document.getElementById('bake-list');
+            const postContainer = document.getElementById('bake-post-container');
+            const listView = document.getElementById('bake-list-container');
+
+            if (bakePosts.length === 0) {
+                listContainer.innerHTML = '<li>No baking posts yet.</li>';
+                return;
+            }
+
+            listContainer.innerHTML = bakePosts.map(post => `
+                <li class="bake-list-item">
+                    <a href="?post=${encodeURIComponent(post.filename)}" class="bake-post-link">
+                        ${post.title}
+                    </a>
+                    <div class="bake-post-date">${post.date}</div>
+                </li>
+            `).join('');
+
+            listView.style.display = 'block';
+            postContainer.style.display = 'none';
+        }
+
+        async function displayPost(filename) {
+            const listView = document.getElementById('bake-list-container');
+            const postContainer = document.getElementById('bake-post-container');
+            const postContent = document.getElementById('bake-post-content');
+
+            listView.style.display = 'none';
+            postContainer.style.display = 'block';
+
+            postContent.innerHTML = '<p>Loading...</p>';
+            const html = await loadMarkdown(filename);
+            postContent.innerHTML = html;
+        }
+
+        async function init() {
+            await loadBakePosts();
+            if (postParam) {
+                displayPost(postParam);
+            } else {
+                displayBakeList();
+            }
+        }
+        
+        init();
+    </script>
+</body>
+</html>
+
+

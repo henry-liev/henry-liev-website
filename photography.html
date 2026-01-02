@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photography - Henry Liev</title>
+    <link rel="stylesheet" href="styling.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .photo-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .photo-list {
+            list-style: none;
+            padding: 0;
+        }
+        .photo-list-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #bbb;
+        }
+        .photo-list-item:last-child {
+            border-bottom: none;
+        }
+        .photo-post-link {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .photo-post-date {
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+        }
+        .photo-content {
+            margin-top: 20px;
+        }
+        .photo-content img {
+            max-width: 100%;
+            height: auto;
+        }
+        /* Image formatting helpers */
+        .photo-main {
+            display: block;
+            margin: 20px auto;
+            max-width: 90%;
+        }
+        .photo-grid {
+            display: inline-block;
+            width: 32%;
+            margin: 0.5%;
+            vertical-align: top;
+        }
+        @media (max-width: 700px) {
+            .photo-grid {
+                width: 48%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-nav">
+        <div class="name"><em><b>Henry Liev</b></em></div>
+        <div>
+            <a href="index.html">Home</a> &nbsp;
+            <!-- Hidden from main nav on purpose: photography section is private/experimental -->
+            <!-- <a href="photography.html">Photography</a> &nbsp; -->
+        </div>
+    </div>
+    <div style="clear:both"></div>
+    
+    <div class="photo-container">
+        <h1>Photography</h1>
+
+        <div style="margin-bottom:24px;">
+            <p>
+                Camera: Ricoh GR II
+                <br>
+                Tripod: Ulanzi MT44
+            </p>
+        </div>
+        
+        <div id="photo-list-container">
+            <ul class="photo-list" id="photo-list"></ul>
+        </div>
+        
+        <div id="photo-post-container" style="display: none;">
+            <div class="back-link">
+                <a href="photography.html">← Back to photography</a>
+            </div>
+            <div id="photo-post-content" class="photo-content"></div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const postParam = urlParams.get('post');
+
+        let photoPosts = [];
+        
+        async function loadPhotoPosts() {
+            try {
+                const response = await fetch('photography/posts.json');
+                if (response.ok) {
+                    photoPosts = await response.json();
+                } else {
+                    console.warn('Could not load photography/posts.json, using empty list');
+                    photoPosts = [];
+                }
+            } catch (error) {
+                console.error('Error loading photography posts:', error);
+                photoPosts = [];
+            }
+        }
+
+        async function loadMarkdown(filename) {
+            try {
+                const response = await fetch(`photography/${filename}`);
+                if (!response.ok) {
+                    throw new Error('File not found');
+                }
+                const markdown = await response.text();
+                let html = marked.parse(markdown);
+                // Allow simple class syntax like ![alt](src){.photo-main}
+                html = html.replace(/(<img[^>]*?)\s*\{\.([a-zA-Z0-9_-]+)\s*\}/g, '$1 class="$2"');
+                // Rewrite image paths to be relative to HTML file (pictures/ -> photography/pictures/)
+                html = html.replace(/src="pictures\//g, 'src="photography/pictures/');
+                return html;
+            } catch (error) {
+                return `<p>Error loading post: ${error.message}</p>`;
+            }
+        }
+
+        function displayPhotoList() {
+            const listContainer = document.getElementById('photo-list');
+            const postContainer = document.getElementById('photo-post-container');
+            const listView = document.getElementById('photo-list-container');
+
+            if (photoPosts.length === 0) {
+                listContainer.innerHTML = '<li>No photography posts yet.</li>';
+                return;
+            }
+
+            listContainer.innerHTML = photoPosts.map(post => `
+                <li class="photo-list-item">
+                    <a href="?post=${encodeURIComponent(post.filename)}" class="photo-post-link">
+                        ${post.title}
+                    </a>
+                    <div class="photo-post-date">${post.date}</div>
+                </li>
+            `).join('');
+
+            listView.style.display = 'block';
+            postContainer.style.display = 'none';
+        }
+
+        async function displayPost(filename) {
+            const listView = document.getElementById('photo-list-container');
+            const postContainer = document.getElementById('photo-post-container');
+            const postContent = document.getElementById('photo-post-content');
+
+            listView.style.display = 'none';
+            postContainer.style.display = 'block';
+
+            postContent.innerHTML = '<p>Loading...</p>';
+            const html = await loadMarkdown(filename);
+            postContent.innerHTML = html;
+        }
+
+        async function init() {
+            await loadPhotoPosts();
+            if (postParam) {
+                displayPost(postParam);
+            } else {
+                displayPhotoList();
+            }
+        }
+        
+        init();
+    </script>
+</body>
+</html>

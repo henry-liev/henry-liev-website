@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Form Submissions - Admin</title>
+    <link rel="stylesheet" href="styling.css">
+    <style>
+        .admin-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .submission-item {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+        .submission-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .submission-meta {
+            font-size: 14px;
+            color: #666;
+        }
+        .submission-name {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        .submission-email {
+            color: #333;
+            text-decoration: none;
+            border-bottom: 1px dashed #333;
+        }
+        .submission-email:hover {
+            border-bottom-style: solid;
+        }
+        .submission-message {
+            margin-top: 15px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .delete-btn {
+            background: none;
+            border: 1px solid #c44;
+            color: #c44;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            border-radius: 3px;
+        }
+        .delete-btn:hover {
+            background-color: #c44;
+            color: #fff;
+        }
+        .stats {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .error {
+            color: #c44;
+            padding: 15px;
+            background-color: #ffe0e0;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-nav">
+        <div class="name"><em><b>Henry Liev</b></em></div>
+        <div>
+            <a href="index.html">Home</a> &nbsp;
+            <!-- Hidden from main nav: admin page -->
+            <!-- <a href="admin.html">Admin</a> &nbsp; -->
+        </div>
+    </div>
+    <div style="clear:both"></div>
+    
+    <div class="admin-container">
+        <h1>Contact Form Submissions</h1>
+        
+        <div id="stats" class="stats" style="display: none;">
+            <strong>Total Submissions:</strong> <span id="submission-count">0</span>
+        </div>
+        
+        <div id="error-container"></div>
+        <div id="loading" class="loading">Loading submissions...</div>
+        <div id="submissions-container"></div>
+    </div>
+
+    <script>
+        let password = '';
+        
+        // Check for password in URL or prompt
+        const urlParams = new URLSearchParams(window.location.search);
+        password = urlParams.get('password') || '';
+        
+        if (!password) {
+            password = prompt('Enter admin password (or leave blank if not set):');
+        }
+        
+        async function loadSubmissions() {
+            const loadingEl = document.getElementById('loading');
+            const containerEl = document.getElementById('submissions-container');
+            const errorEl = document.getElementById('error-container');
+            const statsEl = document.getElementById('stats');
+            const countEl = document.getElementById('submission-count');
+            
+            try {
+                const url = password ? `/api/submissions?password=${encodeURIComponent(password)}` : '/api/submissions';
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Unauthorized - incorrect password');
+                    }
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to load submissions');
+                }
+                
+                const data = await response.json();
+                loadingEl.style.display = 'none';
+                
+                if (data.submissions && data.submissions.length > 0) {
+                    countEl.textContent = data.count;
+                    statsEl.style.display = 'block';
+                    
+                    containerEl.innerHTML = data.submissions.map(submission => `
+                        <div class="submission-item" id="submission-${submission.id}">
+                            <div class="submission-header">
+                                <div>
+                                    <div class="submission-name">${escapeHtml(submission.name)}</div>
+                                    <div class="submission-meta">
+                                        <a href="mailto:${escapeHtml(submission.email)}" class="submission-email">${escapeHtml(submission.email)}</a>
+                                        <span style="margin-left: 15px;">${formatDate(submission.timestamp)}</span>
+                                    </div>
+                                </div>
+                                <button class="delete-btn" onclick="deleteSubmission('${submission.id}')">Delete</button>
+                            </div>
+                            <div class="submission-message">${escapeHtml(submission.message)}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    containerEl.innerHTML = '<div class="empty">No submissions yet.</div>';
+                    statsEl.style.display = 'block';
+                    countEl.textContent = '0';
+                }
+                
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                errorEl.innerHTML = `<div class="error">Error: ${escapeHtml(error.message)}</div>`;
+            }
+        }
+        
+        async function deleteSubmission(id) {
+            if (!confirm('Are you sure you want to delete this submission?')) {
+                return;
+            }
+            
+            try {
+                const url = password ? `/api/submissions?delete=${id}&password=${encodeURIComponent(password)}` : `/api/submissions?delete=${id}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to delete submission');
+                }
+                
+                // Remove from UI
+                const item = document.getElementById(`submission-${id}`);
+                if (item) {
+                    item.remove();
+                }
+                
+                // Update count
+                const countEl = document.getElementById('submission-count');
+                const currentCount = parseInt(countEl.textContent) || 0;
+                countEl.textContent = Math.max(0, currentCount - 1);
+                
+            } catch (error) {
+                alert('Error deleting submission: ' + error.message);
+            }
+        }
+        
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString();
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Load submissions on page load
+        loadSubmissions();
+    </script>
+</body>
+</html>
+
