@@ -21,7 +21,7 @@
     <h1>Contact</h1>
     
     <div style="max-width: 650px; margin: 0 auto; padding: 0;">
-        <form id="contact-form" action="https://formspree.io/f/xykyyejq" method="POST" style="display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: none; margin-bottom: 0;">
+        <form id="contact-form" method="POST" style="display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: none; margin-bottom: 0;">
             <label for="user-name" style="font-size: 14px;">Your Name:</label>
             <input type="text" id="user-name" name="name" required 
                    placeholder="Your name"
@@ -34,8 +34,6 @@
             <textarea id="user-message" name="message" rows="3" required
                       placeholder="Type your message here..."
                       style="padding: 8px; font-size: 15px; border: 1px solid #bbb; border-radius: 4px; width: 100%; box-sizing: border-box;"></textarea>
-            <input type="hidden" name="_replyto" value="lievhenry@berkeley.edu">
-            <input type="hidden" name="_subject" value="Contact Form Submission">
             <button type="submit" style="margin-top: 8px; padding: 0; border: 1.5px solid #888; background: none; color: #111; border-radius: 0; font-size: 17px; cursor: pointer; height: 40px; align-self: flex-start; display: flex; align-items: center; justify-content: center; min-width: 64px;">
                 Send
             </button>
@@ -56,7 +54,8 @@
             status.textContent = 'Sending...';
             status.style.color = '#777';
             
-            fetch(form.action, {
+            // Use Cloudflare Pages Function endpoint
+            fetch('/api/contact', {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -65,17 +64,17 @@
             })
             .then(response => {
                 if (response.ok) {
-                    status.textContent = 'Message sent successfully!';
-                    status.style.color = '#4a4';
-                    form.reset();
+                    return response.json();
                 } else {
                     return response.json().then(data => {
-                        if (data.error) {
-                            throw new Error(data.error);
-                        }
-                        throw new Error('Something went wrong');
+                        throw new Error(data.error || 'Something went wrong');
                     });
                 }
+            })
+            .then(data => {
+                status.textContent = 'Message sent successfully!';
+                status.style.color = '#4a4';
+                form.reset();
             })
             .catch(error => {
                 status.textContent = 'Error: ' + error.message;
