@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thoughts - Henry Liev</title>
+    <title>Blog - Henry Liev</title>
     <link rel="stylesheet" href="styling.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
@@ -22,26 +22,44 @@
             max-width: 800px;
             margin: 0 auto;
         }
-        .blog-category {
-            margin-bottom: 25px;
+        .dropdown-group {
+            margin-bottom: 18px;
         }
-        .blog-category summary {
-            font-size: 24px;
-            font-weight: bold;
+        .dropdown-btn {
+            background: #f4f4f4;
+            color: #222;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 4px;
             cursor: pointer;
-            padding: 10px 0;
-            user-select: none;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background 0.2s;
+            outline: none;
+            width: 100%;
+            text-align: left;
+            margin-bottom: 5px;
             text-transform: capitalize;
         }
-        .blog-category summary:hover {
-            color: #555;
+        .dropdown-btn:hover,
+        .dropdown-btn:focus {
+            background: #e1e9ff;
         }
-        .blog-category details {
-            border-bottom: 2px solid #bbb;
-            padding-bottom: 15px;
+        .dropdown-content {
+            display: none;
+            padding: 8px 22px;
+            background: #fafbfd;
+            border: 1px solid #ddd;
+            border-radius: 0 0 4px 4px;
+            margin-bottom: 8px;
+            animation: fadeIn 0.15s;
         }
-        .blog-category details[open] {
-            border-bottom: 2px solid #333;
+        .dropdown.open .dropdown-content {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
         }
         .blog-list {
             list-style: none;
@@ -121,7 +139,7 @@
     <div style="clear:both"></div>
     
     <div class="blog-container">
-        <h1>Thoughts</h1>
+        <h1>Blog</h1>
         
         <div id="blog-list-container">
             <ul class="blog-list" id="blog-list"></ul>
@@ -212,11 +230,13 @@
                 const isOpen = index === 0 ? 'open' : '';
                 
                 categoriesHTML += `
-                    <div class="blog-category">
-                        <details ${isOpen}>
-                            <summary>${categoryName}</summary>
+                    <div class="dropdown-group dropdown ${isOpen}">
+                        <button class="dropdown-btn" onclick="toggleDropdown(this)">
+                            ${categoryName}
+                        </button>
+                        <div class="dropdown-content">
                             ${postsHTML}
-                        </details>
+                        </div>
                     </div>
                 `;
             });
@@ -292,6 +312,12 @@
                     console.error('MathJax rendering error:', error);
                 }
             }
+        }
+
+        // Toggle dropdown function
+        function toggleDropdown(button) {
+            const dropdown = button.parentElement;
+            dropdown.classList.toggle('open');
         }
 
         // Initialize
