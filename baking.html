@@ -11,14 +11,54 @@
             max-width: 800px;
             margin: 0 auto;
         }
+        .dropdown-group {
+            margin-bottom: 18px;
+        }
+        .dropdown-btn {
+            background: #f4f4f4;
+            color: #222;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background 0.2s;
+            outline: none;
+            width: 100%;
+            text-align: left;
+            margin-bottom: 5px;
+            text-transform: capitalize;
+        }
+        .dropdown-btn:hover,
+        .dropdown-btn:focus {
+            background: #e1e9ff;
+        }
+        .dropdown-content {
+            display: none;
+            padding: 8px 22px;
+            background: #fafbfd;
+            border: 1px solid #ddd;
+            border-radius: 0 0 4px 4px;
+            margin-bottom: 8px;
+            animation: fadeIn 0.15s;
+        }
+        .dropdown.open .dropdown-content {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
         .bake-list {
             list-style: none;
             padding: 0;
+            margin-top: 15px;
         }
         .bake-list-item {
             margin-bottom: 15px;
             padding-bottom: 15px;
-            border-bottom: 1px solid #bbb;
+            border-bottom: 1px solid #ddd;
         }
         .bake-list-item:last-child {
             border-bottom: none;
@@ -32,6 +72,11 @@
             font-size: 14px;
             color: #666;
             font-style: italic;
+        }
+        .empty-category {
+            color: #999;
+            font-style: italic;
+            padding: 10px 0;
         }
         .bake-content {
             margin-top: 20px;
@@ -79,7 +124,6 @@
         <h1>Baking</h1>
         
         <div id="bake-list-container">
-            <ul class="bake-list" id="bake-list"></ul>
         </div>
         
         <div id="bake-post-container" style="display: none;">
@@ -96,20 +140,27 @@
         const postParam = urlParams.get('post');
 
         // Load bake posts from JSON file
-        let bakePosts = [];
+        let bakeCategories = {};
         
         async function loadBakePosts() {
             try {
                 const response = await fetch('baking/posts.json');
                 if (response.ok) {
-                    bakePosts = await response.json();
+                    const data = await response.json();
+                    // Support both array (backward compatible) and object (with categories) formats
+                    if (Array.isArray(data)) {
+                        // Convert array to object with single "All" category
+                        bakeCategories = { "All": data };
+                    } else {
+                        bakeCategories = data;
+                    }
                 } else {
-                    console.warn('Could not load posts.json, using empty list');
-                    bakePosts = [];
+                    console.warn('Could not load posts.json, using empty object');
+                    bakeCategories = {};
                 }
             } catch (error) {
                 console.error('Error loading posts:', error);
-                bakePosts = [];
+                bakeCategories = {};
             }
         }
 
@@ -134,23 +185,51 @@
 
         // Function to display bake list
         function displayBakeList() {
-            const listContainer = document.getElementById('bake-list');
-            const postContainer = document.getElementById('bake-post-container');
             const listView = document.getElementById('bake-list-container');
+            const postContainer = document.getElementById('bake-post-container');
 
-            if (bakePosts.length === 0) {
-                listContainer.innerHTML = '<li>No baking posts yet. Add markdown files to the baking/ directory and update the bakePosts array in baking.html</li>';
+            const categoryKeys = Object.keys(bakeCategories);
+            
+            if (categoryKeys.length === 0) {
+                listView.innerHTML = '<div>No baking posts yet. Add markdown files to the baking/ directory and update posts.json</div>';
                 return;
             }
 
-            listContainer.innerHTML = bakePosts.map(post => `
-                <li class="bake-list-item">
-                    <a href="?post=${encodeURIComponent(post.filename)}" class="bake-post-link">
-                        ${post.title}
-                    </a>
-                    ${post.date ? `<div class="bake-post-date">${post.date}</div>` : ''}
-                </li>
-            `).join('');
+            // Build HTML for each category
+            let categoriesHTML = '';
+            categoryKeys.forEach((categoryName, index) => {
+                const posts = bakeCategories[categoryName] || [];
+                
+                let postsHTML = '';
+                if (posts.length === 0) {
+                    postsHTML = '<div class="empty-category">No posts in this category yet.</div>';
+                } else {
+                    postsHTML = '<ul class="bake-list">' + posts.map(post => `
+                        <li class="bake-list-item">
+                            <a href="?post=${encodeURIComponent(post.filename)}" class="bake-post-link">
+                                ${post.title}
+                            </a>
+                            ${post.date ? `<div class="bake-post-date">${post.date}</div>` : ''}
+                        </li>
+                    `).join('') + '</ul>';
+                }
+                
+                // All categories collapsed by default
+                const isOpen = '';
+                
+                categoriesHTML += `
+                    <div class="dropdown-group dropdown ${isOpen}">
+                        <button class="dropdown-btn" onclick="toggleDropdown(this)">
+                            ${categoryName}
+                        </button>
+                        <div class="dropdown-content">
+                            ${postsHTML}
+                        </div>
+                    </div>
+                `;
+            });
+
+            listView.innerHTML = categoriesHTML;
 
             listView.style.display = 'block';
             postContainer.style.display = 'none';
@@ -168,6 +247,12 @@
             postContent.innerHTML = '<p>Loading...</p>';
             const html = await loadMarkdown(filename);
             postContent.innerHTML = html;
+        }
+
+        // Toggle dropdown function
+        function toggleDropdown(button) {
+            const dropdown = button.parentElement;
+            dropdown.classList.toggle('open');
         }
 
         // Initialize
