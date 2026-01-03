@@ -121,11 +121,11 @@
                     throw new Error('File not found');
                 }
                 let markdown = await response.text();
-                // Rewrite image paths in markdown before parsing (pictures/ -> baking/pictures/)
-                markdown = markdown.replace(/\]\(pictures\//g, '](baking/pictures/');
+                // Rewrite image paths in markdown before parsing (pictures/ -> /baking/pictures/)
+                markdown = markdown.replace(/\]\(pictures\//g, '](/baking/pictures/');
                 let html = marked.parse(markdown);
-                // Also rewrite any HTML img tags (pictures/ -> baking/pictures/)
-                html = html.replace(/src="pictures\//g, 'src="baking/pictures/');
+                // Also rewrite any HTML img tags (pictures/ -> /baking/pictures/)
+                html = html.replace(/src="pictures\//g, 'src="/baking/pictures/');
                 return html;
             } catch (error) {
                 return `<p>Error loading post: ${error.message}</p>`;
