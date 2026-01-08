@@ -139,23 +139,26 @@
         const urlParams = new URLSearchParams(window.location.search);
         const postParam = urlParams.get('post');
 
-        // Load bake posts from JSON file
+        // Load bake posts from JavaScript file
         let bakeCategories = {};
         
         async function loadBakePosts() {
             try {
-                const response = await fetch('baking/posts.json');
+                const response = await fetch('baking/posts.js');
                 if (response.ok) {
-                    const data = await response.json();
+                    const jsCode = await response.text();
+                    // Execute the JavaScript code to get the bakePosts variable from window
+                    eval(jsCode);
+                    const posts = window.bakePosts || {};
                     // Support both array (backward compatible) and object (with categories) formats
-                    if (Array.isArray(data)) {
+                    if (Array.isArray(posts)) {
                         // Convert array to object with single "All" category
-                        bakeCategories = { "All": data };
+                        bakeCategories = { "All": posts };
                     } else {
-                        bakeCategories = data;
+                        bakeCategories = posts;
                     }
                 } else {
-                    console.warn('Could not load posts.json, using empty object');
+                    console.warn('Could not load posts.js, using empty object');
                     bakeCategories = {};
                 }
             } catch (error) {

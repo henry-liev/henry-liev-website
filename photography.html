@@ -164,23 +164,26 @@
         const urlParams = new URLSearchParams(window.location.search);
         const postParam = urlParams.get('post');
 
-        // Load photo posts from JSON file
+        // Load photo posts from JavaScript file
         let photoCategories = {};
         
         async function loadPhotoPosts() {
             try {
-                const response = await fetch('photography/posts.json');
+                const response = await fetch('photography/posts.js');
                 if (response.ok) {
-                    const data = await response.json();
+                    const jsCode = await response.text();
+                    // Execute the JavaScript code to get the photoPosts variable from window
+                    eval(jsCode);
+                    const posts = window.photoPosts || {};
                     // Support both array (backward compatible) and object (with categories) formats
-                    if (Array.isArray(data)) {
+                    if (Array.isArray(posts)) {
                         // Convert array to object with single "All" category
-                        photoCategories = { "All": data };
+                        photoCategories = { "All": posts };
                     } else {
-                        photoCategories = data;
+                        photoCategories = posts;
                     }
                 } else {
-                    console.warn('Could not load posts.json, using empty object');
+                    console.warn('Could not load posts.js, using empty object');
                     photoCategories = {};
                 }
             } catch (error) {

@@ -1,10 +1,10 @@
-{
-    "Articles": [
-        {
-            "filename": "Baking List.md",
-            "title": "📌Baking List"
-        }
-    ],
+window.bakePosts = {
+    // "Articles": [
+    //     {
+    //         "filename": "Baking List.md",
+    //         "title": "📌Baking List"
+    //     }
+    // ],
     "Food": [
         {
             "filename": "croquembouche1.md",
@@ -37,6 +37,5 @@
             "date": "6 September 2025"
         }
     ]
-}
-
+};
 

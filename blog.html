@@ -158,16 +158,26 @@
         const urlParams = new URLSearchParams(window.location.search);
         const postParam = urlParams.get('post');
 
-        // Load blog posts from JSON file
+        // Load blog posts from JavaScript file
         let blogCategories = {};
         
         async function loadBlogPosts() {
             try {
-                const response = await fetch('blog/posts.json');
+                const response = await fetch('blog/posts.js');
                 if (response.ok) {
-                    blogCategories = await response.json();
+                    const jsCode = await response.text();
+                    // Execute the JavaScript code to get the blogPosts variable from window
+                    eval(jsCode);
+                    const posts = window.blogPosts || {};
+                    // Support both array (backward compatible) and object (with categories) formats
+                    if (Array.isArray(posts)) {
+                        // Convert array to object with single "All" category
+                        blogCategories = { "All": posts };
+                    } else {
+                        blogCategories = posts;
+                    }
                 } else {
-                    console.warn('Could not load posts.json, using empty object');
+                    console.warn('Could not load posts.js, using empty object');
                     blogCategories = {};
                 }
             } catch (error) {

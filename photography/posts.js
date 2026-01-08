@@ -1,4 +1,4 @@
-{
+window.photoPosts = {
     "Photos": [
         {
             "filename": "scsunset1.md",
@@ -11,6 +11,5 @@
             "date": "2 December 2025"
         }
     ]
-}
-
+};
 
