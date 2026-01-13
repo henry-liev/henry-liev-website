@@ -1,5 +1,5 @@
 window.photoPosts = {
-    "Photos": [
+    "Landscape Photography": [
         {
             "filename": "scsunset1.md",
             "title": "Santa Cruz Sunset",
