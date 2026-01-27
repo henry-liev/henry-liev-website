@@ -10,6 +10,7 @@
 - [Chiffon Cake](https://preppykitchen.com/chiffon-cake/#recipe)
 - [Flan Cake](https://www.piesandtacos.com/flan-cake/)
 - [Honey Cake](https://www.thenewworld.co.uk/edoardo-pellicano-honey-cake/)
+- [Lemon Cheesecake](https://sugarspunrun.com/lemon-cheesecake/)
 - [Mango Cream Chiffon Cake](https://bakewithzoha.com/mango-cream-chiffon-cake/) with [Mango Mirror Glaze](https://whateveritbakes.com/tag/mango-mirror-glaze/) and [Mango Rose](https://youtu.be/rf4psgQxB28?si=N_9JdBT4EDxdqoI2)
 - [Oreo Cheesecake](https://sugarspunrun.com/oreo-cheesecake/)
 - [Pineapple Upside-Down Cake](https://sugarspunrun.com/pineapple-upside-down-cake/)
